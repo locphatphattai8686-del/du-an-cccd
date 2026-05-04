@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tạo QR CCCD</title>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+<style>
+body {
+    font-family: Arial;
+    margin:0;
+    background:#ffffff;
+    color:#111;
+}
+
+/* FORM */
+.container {
+    max-width:400px;
+    margin:auto;
+    padding:20px;
+}
+
+input {
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:8px;
+    border:none;
+    box-sizing:border-box;
+}
+
+button {
+    width:100%;
+    padding:12px;
+    background:#1e88e5;
+    color:white;
+    border:none;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+canvas {
+    margin-top:20px;
+    max-width:100%;
+}
+
+/* CCCD UI */
+.viewer {
+    display:none;
+    background:#ffffff;
+    color:#111;
+    min-height:100vh;
+    position:relative;
+    padding-bottom:100px;
+}
+
+.header {
+    background:#08a8ff;
+    color:white;
+    padding:16px 12px;
+    text-align:center;
+    font-weight:bold;
+    font-size:21px;
+    line-height:1.2;
+}
+
+.viewer-wrap {
+    max-width:520px;
+    margin:0 auto;
+}
+
+.card {
+    position:relative;
+    background:
+      radial-gradient(circle at 92% 84%, rgba(9, 182, 204, 0.24), rgba(9, 182, 204, 0) 55%),
+      radial-gradient(circle at 10% 10%, rgba(180, 230, 240, 0.25), rgba(255, 255, 255, 0) 45%),
+      #ffffff;
+    border:1px solid #ececec;
+    margin:14px 12px 8px;
+    padding:14px 14px 12px;
+    border-radius:12px;
+    box-shadow:0 3px 12px rgba(20, 32, 44, 0.08);
+}
+
+.logo {
+    position:absolute;
+    right:10px;
+    top:10px;
+    width:40px;
+    height:40px;
+    object-fit:contain;
+}
+
+.grid-2 {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0 12px;
+}
+
+.row { margin-bottom:10px; min-height:40px; }
+.label {
+    color:#8b8b8b;
+    font-size:12px;
+    margin-bottom:2px;
+    display:inline-block;
+}
+.value {
+    font-weight:bold;
+    font-size:17px;
+    line-height:1.08;
+    color:#232323;
+    word-break:break-word;
+}
+
+.note {
+    color:#7f7f7f;
+    font-size:12px;
+    line-height:1.35;
+    margin:14px 16px 0;
+    max-width:520px;
+}
+
+.actions {
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:14px;
+    display:flex;
+    justify-content:center;
+    pointer-events:none;
+}
+
+.actions-inner {
+    width:min(520px, calc(100% - 20px));
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    pointer-events:auto;
+}
+
+.actions .btn {
+    border:none;
+    border-radius:999px;
+    padding:12px 10px;
+    font-size:17px;
+    font-weight:bold;
+    line-height:1;
+}
+
+.actions .btn.light {
+    background:#eff1f5;
+    color:#252525;
+}
+
+.actions .btn.primary {
+    background:#007cff;
+    color:#fff;
+}
+
+.actions .icon {
+    font-size:18px;
+    margin-right:4px;
+    vertical-align:middle;
+}
+
+@media (max-width: 600px) {
+    .header { font-size:19px; }
+    .value { font-size:17px; }
+    .actions .btn { font-size:17px; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container" id="formPage">
+    <h2>Tạo QR CCCD</h2>
+
+    <input id="name" placeholder="Họ tên">
+    <input id="cccd" placeholder="Số CCCD">
+    <input id="sex" placeholder="Giới tính">
+    <input id="dob" placeholder="Ngày sinh">
+    <input id="address" placeholder="Địa chỉ">
+    <input id="date" placeholder="Ngày cấp">
+
+    <button onclick="gen()">Tạo QR</button>
+
+    <canvas id="qr"></canvas>
+</div>
+
+<!-- VIEW -->
+<div class="viewer" id="viewPage">
+    <div class="header">Thông tin Căn cước công dân</div>
+
+    <div class="viewer-wrap">
+        <div class="card">
+            <img class="logo" src="logo.png" alt="logo">
+
+            <div class="row">
+                <div class="label">Số CCCD</div>
+                <div class="value sm" id="v_cccd"></div>
+            </div>
+
+            <div class="row">
+                <div class="label">Họ và tên</div>
+                <div class="value md" id="v_name"></div>
+            </div>
+
+            <div class="grid-2">
+                <div class="row">
+                    <div class="label">Giới tính</div>
+                    <div class="value" id="v_sex"></div>
+                </div>
+                <div class="row">
+                    <div class="label">Ngày sinh</div>
+                    <div class="value" id="v_dob"></div>
+                </div>
+            </div>
+
+            <div class="row address">
+                <div class="label">Nơi thường trú</div>
+                <div class="value" id="v_address"></div>
+            </div>
+
+            <div class="row">
+                <div class="label">Ngày cấp CCCD</div>
+                <div class="value" id="v_date"></div>
+            </div>
+        </div>
+
+        <div class="note">
+            Thông tin này được lấy từ mã QR in trên CCCD, Zalo không chịu trách nhiệm về tính xác thực
+        </div>
+    </div>
+
+    <div class="actions">
+        <div class="actions-inner">
+            <button class="btn light" type="button">Thêm vào Ví QR</button>
+            <button class="btn primary" type="button"><span class="icon">🔗</span>Chia sẻ</button>
+        </div>
+    </div>
+ </div>
+
+<script>
+// check nếu là chế độ xem
+const p = new URLSearchParams(window.location.search);
+
+if (p.get("name")) {
+    document.getElementById("formPage").style.display = "none";
+    document.getElementById("viewPage").style.display = "block";
+
+    document.getElementById("v_name").innerText = p.get("name") || "";
+    document.getElementById("v_cccd").innerText = p.get("cccd") || "";
+    document.getElementById("v_sex").innerText = p.get("sex") || "";
+    document.getElementById("v_dob").innerText = p.get("dob") || "";
+    document.getElementById("v_address").innerText = p.get("address") || "";
+    document.getElementById("v_date").innerText = p.get("date") || "";
+}
+
+// tạo QR
+function gen() {
+    const name = document.getElementById("name").value;
+    const cccd = document.getElementById("cccd").value;
+    const sex = document.getElementById("sex").value;
+    const dob = document.getElementById("dob").value;
+    const address = document.getElementById("address").value;
+    const date = document.getElementById("date").value;
+
+    const url = location.origin + location.pathname +
+        `?name=${encodeURIComponent(name)}&cccd=${encodeURIComponent(cccd)}&sex=${encodeURIComponent(sex)}&dob=${encodeURIComponent(dob)}&address=${encodeURIComponent(address)}&date=${encodeURIComponent(date)}`;
+
+    QRCode.toCanvas(document.getElementById("qr"), url);
+}
+</script>
+
+</body>
+</html>
