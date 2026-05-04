@@ -245,19 +245,63 @@ canvas {
  </div>
 
 <script>
-// check nếu là chế độ xem
-const p = new URLSearchParams(window.location.search);
+// URL ngan gon hon cho QR: d=<base64url(json)>
+function toBase64Url(str) {
+    const bytes = new TextEncoder().encode(str);
+    let binary = "";
+    for (const b of bytes) binary += String.fromCharCode(b);
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
 
-if (p.get("name")) {
+function fromBase64Url(input) {
+    const padded = input.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((input.length + 3) % 4);
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+}
+
+function getViewData() {
+    const p = new URLSearchParams(window.location.search);
+    const compact = p.get("d");
+
+    if (compact) {
+        try {
+            const obj = JSON.parse(fromBase64Url(compact));
+            return {
+                name: obj.n || "",
+                cccd: obj.c || "",
+                sex: obj.s || "",
+                dob: obj.b || "",
+                address: obj.a || "",
+                date: obj.t || ""
+            };
+        } catch (_e) {
+            // Fallback ve query cu neu parse that bai
+        }
+    }
+
+    return {
+        name: p.get("name") || "",
+        cccd: p.get("cccd") || "",
+        sex: p.get("sex") || "",
+        dob: p.get("dob") || "",
+        address: p.get("address") || "",
+        date: p.get("date") || ""
+    };
+}
+
+const viewData = getViewData();
+
+if (viewData.name) {
     document.getElementById("formPage").style.display = "none";
     document.getElementById("viewPage").style.display = "block";
 
-    document.getElementById("v_name").innerText = p.get("name") || "";
-    document.getElementById("v_cccd").innerText = p.get("cccd") || "";
-    document.getElementById("v_sex").innerText = p.get("sex") || "";
-    document.getElementById("v_dob").innerText = p.get("dob") || "";
-    document.getElementById("v_address").innerText = p.get("address") || "";
-    document.getElementById("v_date").innerText = p.get("date") || "";
+    document.getElementById("v_name").innerText = viewData.name;
+    document.getElementById("v_cccd").innerText = viewData.cccd;
+    document.getElementById("v_sex").innerText = viewData.sex;
+    document.getElementById("v_dob").innerText = viewData.dob;
+    document.getElementById("v_address").innerText = viewData.address;
+    document.getElementById("v_date").innerText = viewData.date;
 }
 
 // tạo QR
@@ -269,10 +313,17 @@ function gen() {
     const address = document.getElementById("address").value;
     const date = document.getElementById("date").value;
 
-    const url = location.origin + location.pathname +
-        `?name=${encodeURIComponent(name)}&cccd=${encodeURIComponent(cccd)}&sex=${encodeURIComponent(sex)}&dob=${encodeURIComponent(dob)}&address=${encodeURIComponent(address)}&date=${encodeURIComponent(date)}`;
+    const payload = { n: name, c: cccd, s: sex, b: dob, a: address, t: date };
+    const compact = toBase64Url(JSON.stringify(payload));
+    const viewPath = location.pathname.replace(/[^/]+$/, "v.html");
+    const origin = (location.origin && location.origin !== "null") ? location.origin : "";
+    const url = `${origin}${viewPath}?d=${compact}`;
 
-    QRCode.toCanvas(document.getElementById("qr"), url);
+    QRCode.toCanvas(document.getElementById("qr"), url, {
+        width: 260,
+        margin: 1,
+        errorCorrectionLevel: "M"
+    });
 }
 </script>
 

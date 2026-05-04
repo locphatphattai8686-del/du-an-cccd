@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Lay Token Zalo SDK</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fb; color: #111827; }
+    .wrap { max-width: 760px; margin: 24px auto; padding: 0 16px; }
+    .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 3px 16px rgba(0, 0, 0, 0.06); margin-bottom: 16px; }
+    h1 { font-size: 22px; margin: 0 0 12px; }
+    p { margin: 8px 0; line-height: 1.4; }
+    .row { display: grid; gap: 10px; margin-top: 10px; }
+    textarea { width: 100%; min-height: 90px; resize: vertical; border-radius: 8px; border: 1px solid #d1d5db; padding: 10px; box-sizing: border-box; }
+    button { border: none; border-radius: 8px; padding: 10px 14px; background: #0a74ff; color: #fff; font-weight: 700; cursor: pointer; }
+    .muted { color: #6b7280; font-size: 13px; }
+    pre { background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 8px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Demo Lấy Access Token Từ Zalo SDK</h1>
+      <p>Trong môi trường Mini App thật, bạn gọi SDK để lấy <code>accessToken</code>, sau đó gửi về backend <code>/api/zalo/me</code> để xác thực.</p>
+      <p class="muted">Nếu đang mở bằng trình duyệt thường, bạn có thể dán token test vào ô bên dưới để thử API backend.</p>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <label for="token"><strong>Access Token</strong></label>
+        <textarea id="token" placeholder="Dán accessToken tại đây..."></textarea>
+        <button id="btnSend" type="button">Gửi backend lấy profile</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <strong>Kết quả</strong>
+      <pre id="result">Chưa có dữ liệu.</pre>
+    </div>
+
+    <div class="card">
+      <strong>Mẫu gọi SDK (đặt trong Mini App)</strong>
+      <pre>import { getAccessToken } from "zmp-sdk/apis";
+
+const token = await getAccessToken();
+// gửi token về backend để verify
+await fetch("/api/zalo/me", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ accessToken: token })
+});</pre>
+    </div>
+  </div>
+
+  <script>
+    const tokenEl = document.getElementById("token");
+    const resultEl = document.getElementById("result");
+    const btn = document.getElementById("btnSend");
+
+    btn.addEventListener("click", async () => {
+      const accessToken = tokenEl.value.trim();
+      if (!accessToken) {
+        resultEl.textContent = "Vui long nhap accessToken.";
+        return;
+      }
+
+      resultEl.textContent = "Dang goi backend...";
+      try {
+        const resp = await fetch("/api/zalo/me", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken })
+        });
+        const data = await resp.json();
+        resultEl.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        resultEl.textContent = `Loi: ${String(err?.message || err)}`;
+      }
+    });
+  </script>
+</body>
+</html>
